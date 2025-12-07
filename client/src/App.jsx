@@ -1,35 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import Login from './pages/Login';
+import Profile from './pages/Profile';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'));
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (user) localStorage.setItem('user', JSON.stringify(user));
+    else localStorage.removeItem('user');
+  }, [user]);
+
+  function handleLogin({ token, user }) {
+    // Save token and set user
+    localStorage.setItem('token', token);
+    setUser(user);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('token');
+    setUser(null);
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
+      <div className="header-logos">
+        <a href="https://vite.dev" target="_blank" rel="noreferrer">
+          <img src="/vite.svg" className="logo" alt="Vite logo" />
         </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
+        <a href="https://react.dev" target="_blank" rel="noreferrer">
+          <img src="/src/assets/react.svg" className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
 
-export default App
+      <h1 className="app-title">Vite + React — Login demo</h1>
+
+      <div className="app-container">
+        {!user ? (
+          <Login onLogin={handleLogin} />
+        ) : (
+          <Profile user={user} onLogout={handleLogout} />
+        )}
+      </div>
+
+      <p className="read-the-docs">This demo uses localStorage for the JWT token. Replace with httpOnly cookies for production.</p>
+    </>
+  );
+}
