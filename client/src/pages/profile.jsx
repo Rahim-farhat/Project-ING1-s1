@@ -1,10 +1,13 @@
-export default function Profile({ user, onLogout }) {
+import React from 'react';
+
+export default function Profile({ user, onLogout, onSwitchToLogin }) {
   return (
-    <div className="card auth-card">
-      <h2>Welcome</h2>
-      <p>{user?.name || user?.email}</p>
-      <div style={{ marginTop: 16 }}>
+    <div>
+      <h3 style={{ marginTop: 0 }}>Welcome</h3>
+      <p style={{ marginBottom: 8 }}>{user?.name || user?.email}</p>
+      <div className="row" style={{ marginTop: 12 }}>
         <button className="btn danger" onClick={onLogout}>Logout</button>
+        <button className="btn ghost" onClick={onSwitchToLogin}>Back to login</button>
       </div>
     </div>
   );

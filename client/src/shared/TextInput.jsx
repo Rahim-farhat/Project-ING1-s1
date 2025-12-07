@@ -1,9 +1,11 @@
-export default function TextInput({ label, value, onChange, type = 'text', placeholder }) {
+import React from 'react';
+
+export default function TextInput({ label, value, onChange, type = 'text', placeholder = '' }) {
   return (
-    <label className="field">
-      <span className="field-label">{label}</span>
+    <label>
+      <div className="field-label">{label}</div>
       <input
-        className="field-input"
+        className="input"
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

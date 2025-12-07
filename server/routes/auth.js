@@ -1,62 +1,91 @@
-const express = require('express');
+import express from 'express';
+import { body } from 'express-validator';
+import {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  changePassword,
+  logout
+} from '../controllers/authController.js';
+import { protect } from '../middleware/auth.js';
+
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
 
+// Validation middleware
+const registerValidation = [
+  body('name')
+    .trim()
+    .notEmpty().withMessage('Name is required')
+    .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2-50 characters'),
+  
+  body('email')
+    .trim()
+    .notEmpty().withMessage('Email is required')
+    .isEmail().withMessage('Please provide a valid email')
+    .normalizeEmail(),
+  
+  body('password')
+    .notEmpty().withMessage('Password is required')
+    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+];
 
-// POST /api/auth/register (optional helper to create a user)
-router.post('/register', async (req, res) => {
-try {
-const { email, password, name } = req.body;
-if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
+const loginValidation = [
+  body('email')
+    .trim()
+    .notEmpty().withMessage('Email is required')
+    .isEmail().withMessage('Please provide a valid email')
+    .normalizeEmail(),
+  
+  body('password')
+    .notEmpty().withMessage('Password is required')
+];
 
+const updateProfileValidation = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2-50 characters'),
+  
+  body('email')
+    .optional()
+    .trim()
+    .isEmail().withMessage('Please provide a valid email')
+    .normalizeEmail()
+];
 
-const existing = await User.findOne({ email });
-if (existing) return res.status(400).json({ message: 'User already exists' });
+const changePasswordValidation = [
+  body('currentPassword')
+    .notEmpty().withMessage('Current password is required'),
+  
+  body('newPassword')
+    .notEmpty().withMessage('New password is required')
+    .isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+    .custom((value, { req }) => {
+      if (value === req.body.currentPassword) {
+        throw new Error('New password must be different from current password');
+      }
+      return true;
+    }),
+  
+  body('confirmPassword')
+    .notEmpty().withMessage('Confirm password is required')
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    })
+];
 
+// Public routes
+router.post('/register', registerValidation, register);
+router.post('/login', loginValidation, login);
 
-const salt = await bcrypt.genSalt(10);
-const passwordHash = await bcrypt.hash(password, salt);
+// Protected routes
+router.get('/me', protect, getMe);
+router.put('/update', protect, updateProfileValidation, updateProfile);
+router.put('/change-password', protect, changePasswordValidation, changePassword);
+router.post('/logout', protect, logout);
 
-
-const user = new User({ email, passwordHash, name });
-await user.save();
-
-
-return res.status(201).json({ message: 'User created' });
-} catch (err) {
-console.error(err);
-return res.status(500).json({ message: 'Server error' });
-}
-});
-
-
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
-try {
-const { email, password } = req.body;
-if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
-
-
-const user = await User.findOne({ email });
-if (!user) return res.status(400).json({ message: 'Invalid credentials' });
-
-
-const isMatch = await bcrypt.compare(password, user.passwordHash);
-if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-
-
-const payload = { userId: user._id, email: user.email };
-const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
-
-
-return res.json({ token, user: { id: user._id, email: user.email, name: user.name } });
-} catch (err) {
-console.error(err);
-return res.status(500).json({ message: 'Server error' });
-}
-});
-
-
-module.exports = router;
+export default router;

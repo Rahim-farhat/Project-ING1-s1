@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import TextInput from '../shared/TextInput';
-import { login as apiLogin } from '../utils/auth';
+import React, { useState } from 'react';
+import TextInput from '../shared/TextInput.jsx';
+import { login as apiLogin } from '../utils/auth.jsx';
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onSwitchToRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -14,8 +15,7 @@ export default function Login({ onLogin }) {
     setLoading(true);
     try {
       const data = await apiLogin({ email, password });
-      // apiLogin returns { token, user }
-      onLogin(data);
+      onLogin(data); // expects { token, user }
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {
@@ -24,20 +24,24 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="card auth-card">
-      <h2>Sign in</h2>
+    <div>
       <form onSubmit={handleSubmit} className="form-stack">
         <TextInput label="Email" value={email} onChange={setEmail} placeholder="you@example.com" />
-        <TextInput label="Password" type="password" value={password} onChange={setPassword} placeholder="Your password" />
+        <TextInput label="Password" type="password" value={password} onChange={setPassword} placeholder="Password" />
 
-        {error && <div className="error-text">{error}</div>}
+        {error && <div className="error">{error}</div>}
 
-        <button className="btn primary" type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
+        <div className="row" style={{ marginTop: 8 }}>
+          <button type="submit" className="btn primary" disabled={loading}>
+            {loading ? 'Signing in...' : 'Login'}
+          </button>
+          <button type="button" className="btn ghost" onClick={onSwitchToRegister}>
+            Create account
+          </button>
+        </div>
       </form>
 
-      <p className="small-muted">Need an account? Create one via the backend <code>/api/auth/register</code> endpoint.</p>
+      <p className="small-muted">You can create an account via the register form or use backend /api/auth/register.</p>
     </div>
   );
 }
