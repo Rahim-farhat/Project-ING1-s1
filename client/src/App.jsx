@@ -1,9 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
+import DashboardLayout from './components/DashboardLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
+import DashboardHome from './pages/DashboardHome';
+import ProfilePage from './pages/ProfilePage';
+import GenerateCVPage from './pages/GenerateCVPage';
+import InterviewPrepPage from './pages/InterviewPrepPage';
 import './App.css';
 
 // Component to handle root navigation
@@ -33,10 +37,15 @@ function App() {
           path="/dashboard"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <DashboardLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route index element={<DashboardHome />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="generate-cv" element={<GenerateCVPage />} />
+          <Route path="interview-prep" element={<InterviewPrepPage />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
@@ -44,4 +53,5 @@ function App() {
 }
 
 export default App;
+
 

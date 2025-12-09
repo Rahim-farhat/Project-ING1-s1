@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
+import profileRoutes from './routes/profile.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -15,9 +16,11 @@ const PORT = process.env.PORT || 5000;
 
 // CORS configuration - allow credentials (cookies)
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5175',
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
 }));
+
+console.log(process.env.CLIENT_URL);
 
 // Body parser
 app.use(express.json());
@@ -51,6 +54,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', authRoutes);
+app.use('/api', profileRoutes);
 
 // Error handling
 app.use(notFound);
