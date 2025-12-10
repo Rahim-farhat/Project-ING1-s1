@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
+import cvRoutes from './routes/cv.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -55,6 +56,7 @@ app.get('/', (req, res) => {
 
 app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
+app.use('/api/cv', cvRoutes);
 
 // Error handling
 app.use(notFound);
