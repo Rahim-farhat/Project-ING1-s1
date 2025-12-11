@@ -3,12 +3,12 @@ import Profile from '../models/Profile.js';
 // Get user's profile
 export const getProfile = async (req, res) => {
     try {
-        let profile = await Profile.findOne({ user: req.userId });
+        let profile = await Profile.findOne({ user: req.user.id });
 
         // If no profile exists, create an empty one
         if (!profile) {
             profile = new Profile({
-                user: req.userId,
+                user: req.user.id,
                 personalInfo: {},
                 education: [],
                 workExperience: [],
@@ -38,7 +38,7 @@ export const updateProfile = async (req, res) => {
     try {
         const profileData = req.body;
 
-        let profile = await Profile.findOne({ user: req.userId });
+        let profile = await Profile.findOne({ user: req.user.id });
 
         if (profile) {
             // Update existing profile
@@ -46,7 +46,7 @@ export const updateProfile = async (req, res) => {
         } else {
             // Create new profile
             profile = new Profile({
-                user: req.userId,
+                user: req.user.id,
                 ...profileData
             });
         }
@@ -76,7 +76,7 @@ export const updateSection = async (req, res) => {
         const { section } = req.params;
         const sectionData = req.body;
 
-        const profile = await Profile.findOne({ user: req.userId });
+        const profile = await Profile.findOne({ user: req.user.id });
 
         if (!profile) {
             return res.status(404).json({
@@ -117,7 +117,7 @@ export const updateSection = async (req, res) => {
 // Validate profile completeness
 export const validateProfile = async (req, res) => {
     try {
-        const profile = await Profile.findOne({ user: req.userId });
+        const profile = await Profile.findOne({ user: req.user.id });
 
         if (!profile) {
             return res.json({

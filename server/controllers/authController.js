@@ -296,9 +296,9 @@ export const getMe = async (req, res, next) => {
         let user;
 
         if (useMongoDb()) {
-            user = await User.findById(req.userId);
+            user = await User.findById(req.user.id);
         } else {
-            user = await UserFile.findById(req.userId);
+            user = await UserFile.findById(req.user.id);
         }
 
         if (!user) {
