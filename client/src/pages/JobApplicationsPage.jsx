@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { getApplications, getApplicationStats, exportApplications } from '../api/jobApplicationsApi';
 import { getCVs } from '../api/cvsApi';
 import { getTodos } from '../api/todosApi';
 import ApplicationsTable from '../components/ApplicationsTable';
 import ApplicationStats from '../components/ApplicationStats';
+import ApplicationFilters from '../components/ApplicationFilters';
 import TodoWidget from '../components/TodoWidget';
 import ApplicationModal from '../components/ApplicationModal';
 
-const DashboardHome = () => {
-    const { user } = useAuth();
+const JobApplicationsPage = () => {
     const [applications, setApplications] = useState([]);
     const [cvVersions, setCvVersions] = useState([]);
     const [stats, setStats] = useState(null);
@@ -17,17 +16,22 @@ const DashboardHome = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState(null);
+    const [filters, setFilters] = useState({
+        status: 'all',
+        sortBy: '-applicationDate',
+        search: ''
+    });
 
-    // Initial load
+    // Load initial data
     useEffect(() => {
         loadData();
-    }, []);
+    }, [filters]);
 
     const loadData = async () => {
         try {
             setLoading(true);
             const [appsData, statsData, cvsData, todosData] = await Promise.all([
-                getApplications({ status: 'all', sortBy: '-applicationDate' }),
+                getApplications(filters),
                 getApplicationStats(),
                 getCVs(),
                 getTodos({ status: 'all' })
@@ -49,6 +53,11 @@ const DashboardHome = () => {
         setShowModal(true);
     };
 
+    const handleEditApplication = (application) => {
+        setSelectedApplication(application);
+        setShowModal(true);
+    };
+
     const handleModalClose = (shouldRefresh) => {
         setShowModal(false);
         setSelectedApplication(null);
@@ -65,16 +74,15 @@ const DashboardHome = () => {
         }
     };
 
-    const handleEditApplication = (application) => {
-        setSelectedApplication(application);
-        setShowModal(true);
+    const handleFilterChange = (newFilters) => {
+        setFilters({ ...filters, ...newFilters });
     };
 
     if (loading) {
         return (
             <div className="loading-container">
                 <div className="spinner"></div>
-                <p>Chargement du tableau de bord...</p>
+                <p>Chargement des candidatures...</p>
             </div>
         );
     }
@@ -83,8 +91,8 @@ const DashboardHome = () => {
         <div className="job-applications-page">
             <div className="page-header">
                 <div>
-                    <h1>Bienvenue, {user?.username} ! 👋</h1>
-                    <p className="subtitle">Tableau de bord de suivi des candidatures</p>
+                    <h1>Suivi des Candidatures</h1>
+                    <p className="subtitle">Gérez et suivez vos candidatures professionnelles</p>
                 </div>
                 <div className="header-actions">
                     <button className="btn btn-secondary" onClick={handleExport}>
@@ -109,6 +117,11 @@ const DashboardHome = () => {
 
             <div className="applications-content">
                 <div className="applications-main">
+                    <ApplicationFilters
+                        filters={filters}
+                        onFilterChange={handleFilterChange}
+                    />
+
                     <ApplicationsTable
                         applications={applications}
                         cvVersions={cvVersions}
@@ -133,4 +146,4 @@ const DashboardHome = () => {
     );
 };
 
-export default DashboardHome;
+export default JobApplicationsPage;

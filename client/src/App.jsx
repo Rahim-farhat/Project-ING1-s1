@@ -8,6 +8,7 @@ import DashboardHome from './pages/DashboardHome';
 import ProfilePage from './pages/ProfilePage';
 import GenerateCVPage from './pages/GenerateCVPage';
 import InterviewPrepPage from './pages/InterviewPrepPage';
+import JobApplicationsPage from './pages/JobApplicationsPage';
 import './App.css';
 
 // Component to handle root navigation
@@ -45,6 +46,7 @@ function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="generate-cv" element={<GenerateCVPage />} />
           <Route path="interview-prep" element={<InterviewPrepPage />} />
+          <Route path="job-applications" element={<JobApplicationsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
