@@ -59,7 +59,7 @@ app.get('/', (req, res) => {
 app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', jobApplicationRoutes);
-app.use('/api', cvRoutes);
+app.use('/api/cvs', cvRoutes);
 app.use('/api', todoRoutes);
 
 // Error handling

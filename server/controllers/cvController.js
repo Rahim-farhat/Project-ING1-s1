@@ -1,12 +1,12 @@
-import CV from '../models/CV.js';
 import Profile from '../models/Profile.js';
+import JobApplication from '../models/JobApplication.js';
+import CV from '../models/CV.js';
 
-// Get all CV versions for user
+// Get all CVs for the user
 export const getCVs = async (req, res) => {
     try {
         const cvs = await CV.find({ user: req.user.id })
-            .sort('-generatedDate')
-            .select('-profileSnapshot'); // Exclude large snapshot from list view
+            .sort({ generatedDate: -1 });
 
         res.json({
             success: true,
@@ -14,6 +14,7 @@ export const getCVs = async (req, res) => {
             data: cvs
         });
     } catch (error) {
+        console.error('Error fetching CVs:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching CVs',
@@ -22,251 +23,125 @@ export const getCVs = async (req, res) => {
     }
 };
 
-// Get single CV by ID
-export const getCVById = async (req, res) => {
+export const generateCV = async (req, res) => {
     try {
-        const cv = await CV.findOne({
-            _id: req.params.id,
-            user: req.user.id
-        });
+        const userId = req.user.id;
+        const { jobApplicationId } = req.body;
 
-        if (!cv) {
-            return res.status(404).json({
-                success: false,
-                message: 'CV not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            data: cv
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching CV',
-            error: error.message
-        });
-    }
-};
-
-// Create new CV version from current profile
-export const createCV = async (req, res) => {
-    try {
-        const { versionName, description, setAsDefault } = req.body;
-
-        if (!versionName) {
+        // Validate input
+        if (!jobApplicationId) {
             return res.status(400).json({
                 success: false,
-                message: 'Version name is required'
+                message: 'Job application ID is required.'
             });
         }
 
-        // Get current profile
-        const profile = await Profile.findOne({ user: req.user.id });
+        // Fetch the profile
+        const profile = await Profile.findOne({ user: userId });
 
         if (!profile) {
             return res.status(404).json({
                 success: false,
-                message: 'Profile not found. Please create a profile first.'
+                message: 'Profile not found. Please complete your profile first.'
             });
         }
 
-        // Create snapshot of current profile
-        const profileSnapshot = {
-            personalInfo: {
-                ...profile.personalInfo,
-                email: req.user.email // Add email from user account
-            },
-            education: profile.education,
-            workExperience: profile.workExperience,
-            projects: profile.projects,
-            skills: profile.skills,
-            certifications: profile.certifications,
-            languages: profile.languages
+        // Fetch the job application
+        const jobApplication = await JobApplication.findOne({
+            _id: jobApplicationId,
+            user: userId
+        });
+
+        if (!jobApplication) {
+            return res.status(404).json({
+                success: false,
+                message: 'Job application not found.'
+            });
+        }
+
+        // Extract job description from the application
+        const jobDescription = jobApplication.jobDescription;
+
+        // Prepare payload for n8n
+        const payload = {
+            profile: profile,
+            jobDescription: jobDescription
         };
 
-        // Create CV
-        const cv = await CV.create({
-            user: req.user.id,
-            versionName,
-            description,
-            profileSnapshot,
-            isDefault: setAsDefault || false
-        });
-
-        res.status(201).json({
-            success: true,
-            message: 'CV version created successfully',
-            data: cv
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: 'Error creating CV',
-            error: error.message
-        });
-    }
-};
-
-// Update CV metadata
-export const updateCV = async (req, res) => {
-    try {
-        const { versionName, description } = req.body;
-
-        const cv = await CV.findOneAndUpdate(
-            { _id: req.params.id, user: req.user.id },
-            { versionName, description },
-            { new: true, runValidators: true }
-        ).select('-profileSnapshot');
-
-        if (!cv) {
-            return res.status(404).json({
-                success: false,
-                message: 'CV not found'
+        try {
+            // Send to n8n
+            console.log('Sending data to n8n webhook...');
+            const n8nResponse = await fetch('https://rahim-n8n.app.n8n.cloud/webhook/bd1fe569-0009-4ed3-bb14-6e05a6e89d97', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             });
-        }
 
-        res.json({
-            success: true,
-            message: 'CV updated successfully',
-            data: cv
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: 'Error updating CV',
-            error: error.message
-        });
-    }
-};
-
-// Set CV as default
-export const setDefaultCV = async (req, res) => {
-    try {
-        const cv = await CV.findOne({
-            _id: req.params.id,
-            user: req.user.id
-        });
-
-        if (!cv) {
-            return res.status(404).json({
-                success: false,
-                message: 'CV not found'
-            });
-        }
-
-        cv.isDefault = true;
-        await cv.save();
-
-        res.json({
-            success: true,
-            message: 'Default CV updated successfully',
-            data: cv
-        });
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: 'Error setting default CV',
-            error: error.message
-        });
-    }
-};
-
-// Delete CV
-export const deleteCV = async (req, res) => {
-    try {
-        const cv = await CV.findOneAndDelete({
-            _id: req.params.id,
-            user: req.user.id
-        });
-
-        if (!cv) {
-            return res.status(404).json({
-                success: false,
-                message: 'CV not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'CV deleted successfully'
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error deleting CV',
-            error: error.message
-        });
-    }
-};
-
-// Download CV (returns CV data in structured format)
-export const downloadCV = async (req, res) => {
-    try {
-        const cv = await CV.findOne({
-            _id: req.params.id,
-            user: req.user.id
-        });
-
-        if (!cv) {
-            return res.status(404).json({
-                success: false,
-                message: 'CV not found'
-            });
-        }
-
-        // Format CV data for download
-        const cvData = {
-            version: cv.versionName,
-            generatedDate: cv.generatedDate,
-            ...cv.profileSnapshot
-        };
-
-        // Return as JSON (can be enhanced later to generate PDF)
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', `attachment; filename=cv-${cv.versionName.replace(/\s/g, '-')}.json`);
-        res.json(cvData);
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error downloading CV',
-            error: error.message
-        });
-    }
-};
-
-// Get CV usage statistics
-export const getCVStats = async (req, res) => {
-    try {
-        const cvs = await CV.find({ user: req.user.id })
-            .select('versionName usageCount isDefault generatedDate')
-            .sort('-usageCount');
-
-        const total = cvs.length;
-        const defaultCV = cvs.find(cv => cv.isDefault);
-        const mostUsed = cvs[0];
-
-        res.json({
-            success: true,
-            data: {
-                total,
-                defaultCV: defaultCV ? {
-                    id: defaultCV._id,
-                    name: defaultCV.versionName
-                } : null,
-                mostUsed: mostUsed ? {
-                    id: mostUsed._id,
-                    name: mostUsed.versionName,
-                    usageCount: mostUsed.usageCount
-                } : null,
-                cvs
+            if (!n8nResponse.ok) {
+                throw new Error(`n8n webhook failed with status ${n8nResponse.status}`);
             }
-        });
+
+            const contentType = n8nResponse.headers.get("content-type");
+            let latexCode = "";
+
+            if (contentType && contentType.includes("application/json")) {
+                const json = await n8nResponse.json();
+                // Try to find the latex code in common fields
+                latexCode = json.latex || json.output || json.text || json.content;
+
+                // If not found in specific fields, check if it's a structure we can parse or if the whole thing is relevant
+                if (!latexCode) {
+                    // If the response IS the latex code wrapped in a generic object
+                    if (typeof json === 'string') {
+                        latexCode = json;
+                    } else {
+                        // Fallback: stringify it, but this is likely wrong if it's a complex object
+                        // But if the user setup n8n to return "Respond to Webhook" with a single body property, it might be nested
+                        // Let's assume the user sends back an object like { "latex": "..." } or just the text
+
+                        // If structure is unknown, let's keep it empty and hope for text
+                        console.warn('Could not extract latex from JSON:', json);
+                        // Fallback to expecting it might be in 'data'
+                        latexCode = json.data;
+                    }
+                }
+            } else {
+                latexCode = await n8nResponse.text();
+            }
+
+            // If we still don't have latexCode but have a successful response
+            if (!latexCode) {
+                // It's possible the response body IS the latex code but it was parsed as JSON?
+                // Or maybe we missed it.
+                // For now let's hope it's text or { latex: ... }
+            }
+
+            if (typeof latexCode === 'string') {
+                // Clean up markdown code blocks if present
+                latexCode = latexCode.replace(/^```latex\n?/, '').replace(/```$/, '').trim();
+            }
+
+            res.json({
+                success: true,
+                latex: latexCode
+            });
+
+        } catch (webhookError) {
+            console.error('n8n Webhook Error:', webhookError);
+            return res.status(502).json({
+                success: false,
+                message: 'Failed to communicate with CV generation service',
+                error: webhookError.message
+            });
+        }
+
     } catch (error) {
+        console.error('CV Generation Error:', error);
         res.status(500).json({
             success: false,
-            message: 'Error fetching CV statistics',
+            message: 'Internal Server Error',
             error: error.message
         });
     }
