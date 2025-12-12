@@ -103,7 +103,8 @@ const ApplicationsTable = ({ applications, cvVersions, onRefresh, onEdit }) => {
                         </thead>
                         <tbody>
                             {applications.map(app => {
-                                const cvVersion = cvVersions.find(cv => cv._id === app.cvVersion?._id);
+                                // Use the populated cvVersion directly from the application
+                                const cvVersion = app.cvVersion;
 
                                 return (
                                     <tr key={app._id}>
@@ -143,13 +144,68 @@ const ApplicationsTable = ({ applications, cvVersions, onRefresh, onEdit }) => {
                                         </td>
                                         <td className="cv-cell">
                                             {cvVersion ? (
-                                                <button
-                                                    className="btn-view-cv"
-                                                    onClick={() => handleViewCV(cvVersion)}
-                                                    title={cvVersion.versionName}
-                                                >
-                                                    📄 Voir CV
-                                                </button>
+                                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                    <button
+                                                        className="btn-view-cv"
+                                                        onClick={() => handleViewCV(cvVersion)}
+                                                        title="Voir le code LaTeX"
+                                                        style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                                                    >
+                                                        📄 Voir LaTeX
+                                                    </button>
+                                                    <button
+                                                        className="btn-overleaf"
+                                                        onClick={() => {
+                                                            try {
+                                                                const base64 = btoa(unescape(encodeURIComponent(cvVersion.latexCode)));
+                                                                const dataUri = 'data:text/x-tex;base64,' + base64;
+                                                                const overleafUrl = 'https://www.overleaf.com/docs?snip_uri=' + encodeURIComponent(dataUri);
+
+                                                                // Check if URL is too long (most servers limit to ~8KB for URLs)
+                                                                if (overleafUrl.length > 8000) {
+                                                                    // Fallback: Download the .tex file instead
+                                                                    const blob = new Blob([cvVersion.latexCode], { type: 'text/plain' });
+                                                                    const url = window.URL.createObjectURL(blob);
+                                                                    const a = document.createElement('a');
+                                                                    a.href = url;
+                                                                    a.download = `${cvVersion.versionName || 'cv'}.tex`;
+                                                                    document.body.appendChild(a);
+                                                                    a.click();
+                                                                    document.body.removeChild(a);
+                                                                    window.URL.revokeObjectURL(url);
+
+                                                                    alert('⚠️ Le CV est trop volumineux pour être ouvert directement.\n\n' +
+                                                                        '📥 Le fichier .tex a été téléchargé.\n\n' +
+                                                                        '📝 Pour utiliser Overleaf:\n' +
+                                                                        '1. Allez sur overleaf.com\n' +
+                                                                        '2. Créez un nouveau projet\n' +
+                                                                        '3. Uploadez le fichier .tex téléchargé');
+                                                                } else {
+                                                                    window.open(overleafUrl, '_blank');
+                                                                }
+                                                            } catch (e) {
+                                                                console.error('Error opening Overleaf:', e);
+                                                                alert('Impossible d\'ouvrir Overleaf avec ce contenu.');
+                                                            }
+                                                        }}
+                                                        title="Ouvrir dans Overleaf"
+                                                        style={{
+                                                            fontSize: '0.85rem',
+                                                            padding: '0.4rem 0.8rem',
+                                                            backgroundColor: '#4CAF50',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            cursor: 'pointer',
+                                                            fontWeight: '600',
+                                                            transition: 'background-color 0.2s'
+                                                        }}
+                                                        onMouseOver={(e) => e.target.style.backgroundColor = '#45a049'}
+                                                        onMouseOut={(e) => e.target.style.backgroundColor = '#4CAF50'}
+                                                    >
+                                                        🚀 Overleaf
+                                                    </button>
+                                                </div>
                                             ) : (
                                                 <span className="no-cv">-</span>
                                             )}
@@ -202,40 +258,74 @@ const ApplicationsTable = ({ applications, cvVersions, onRefresh, onEdit }) => {
                         <div className="modal-body cv-content-viewer">
                             <div className="cv-meta-info">
                                 <p><strong>Généré le:</strong> {new Date(viewingCV.generatedDate).toLocaleDateString('fr-FR')}</p>
-                                <p><strong>Langue:</strong> {viewingCV.language === 'en' ? 'Anglais' : 'Français'}</p>
+                                {viewingCV.description && <p><strong>Description:</strong> {viewingCV.description}</p>}
                             </div>
 
-                            {viewingCV.profileSnapshot && (
-                                <div className="cv-snapshot-preview">
-                                    <h3>Aperçu du Profil</h3>
-
-                                    {viewingCV.profileSnapshot.personalInfo && (
-                                        <div className="snapshot-section">
-                                            <h4>{viewingCV.profileSnapshot.personalInfo.fullName}</h4>
-                                            <p>{viewingCV.profileSnapshot.personalInfo.headline}</p>
-                                            <small>{viewingCV.profileSnapshot.personalInfo.email} • {viewingCV.profileSnapshot.personalInfo.phone}</small>
-                                        </div>
-                                    )}
-
-                                    {viewingCV.profileSnapshot.skills && viewingCV.profileSnapshot.skills.length > 0 && (
-                                        <div className="snapshot-section">
-                                            <h4>Compétences</h4>
-                                            <div className="skills-tags">
-                                                {viewingCV.profileSnapshot.skills.slice(0, 10).map((skill, i) => (
-                                                    <span key={i} className="skill-tag">{skill}</span>
-                                                ))}
-                                                {viewingCV.profileSnapshot.skills.length > 10 && <span>+ {viewingCV.profileSnapshot.skills.length - 10} autres</span>}
-                                            </div>
-                                        </div>
-                                    )}
+                            {viewingCV.latexCode ? (
+                                <>
+                                    <h3 style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>Code LaTeX</h3>
+                                    <div style={{
+                                        backgroundColor: '#1e293b',
+                                        color: '#e2e8f0',
+                                        padding: '1.5rem',
+                                        borderRadius: '8px',
+                                        overflowX: 'auto',
+                                        maxHeight: '400px',
+                                        border: '1px solid #334155',
+                                        fontFamily: 'Consolas, Monaco, "Andale Mono", monospace',
+                                        fontSize: '0.85rem',
+                                        whiteSpace: 'pre-wrap',
+                                        lineHeight: '1.5'
+                                    }}>
+                                        {viewingCV.latexCode}
+                                    </div>
+                                </>
+                            ) : (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                                    <p>Aucun code LaTeX disponible pour ce CV.</p>
                                 </div>
                             )}
-
-                            <div className="cv-actions-footer">
-                                <p className="info-text">Le PDF complet est disponible dans la section "Mes CVs"</p>
-                            </div>
                         </div>
                         <div className="modal-footer">
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => {
+                                    try {
+                                        const base64 = btoa(unescape(encodeURIComponent(viewingCV.latexCode)));
+                                        const dataUri = 'data:text/x-tex;base64,' + base64;
+                                        const overleafUrl = 'https://www.overleaf.com/docs?snip_uri=' + encodeURIComponent(dataUri);
+
+                                        // Check if URL is too long (most servers limit to ~8KB for URLs)
+                                        if (overleafUrl.length > 8000) {
+                                            // Fallback: Download the .tex file instead
+                                            const blob = new Blob([viewingCV.latexCode], { type: 'text/plain' });
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `${viewingCV.versionName || 'cv'}.tex`;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            document.body.removeChild(a);
+                                            window.URL.revokeObjectURL(url);
+
+                                            alert('⚠️ Le CV est trop volumineux pour être ouvert directement.\n\n' +
+                                                '📥 Le fichier .tex a été téléchargé.\n\n' +
+                                                '📝 Pour utiliser Overleaf:\n' +
+                                                '1. Allez sur overleaf.com\n' +
+                                                '2. Créez un nouveau projet\n' +
+                                                '3. Uploadez le fichier .tex téléchargé');
+                                        } else {
+                                            window.open(overleafUrl, '_blank');
+                                        }
+                                    } catch (e) {
+                                        console.error('Error opening Overleaf:', e);
+                                        alert('Impossible d\'ouvrir Overleaf avec ce contenu.');
+                                    }
+                                }}
+                                style={{ marginRight: '0.5rem' }}
+                            >
+                                🚀 Ouvrir dans Overleaf
+                            </button>
                             <button className="btn btn-secondary" onClick={closeCV}>
                                 Fermer
                             </button>

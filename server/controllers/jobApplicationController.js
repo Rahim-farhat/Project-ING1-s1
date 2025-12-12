@@ -23,7 +23,7 @@ export const getApplications = async (req, res) => {
         }
 
         const applications = await JobApplication.find(query)
-            .populate('cvVersion', 'versionName generatedDate')
+            .populate('cvVersion', 'versionName generatedDate latexCode')
             .sort(sortBy);
 
         res.json({
@@ -101,7 +101,7 @@ export const createApplication = async (req, res) => {
         }
 
         const populatedApplication = await JobApplication.findById(application._id)
-            .populate('cvVersion', 'versionName generatedDate');
+            .populate('cvVersion', 'versionName generatedDate latexCode');
 
         res.status(201).json({
             success: true,
@@ -144,7 +144,7 @@ export const updateApplication = async (req, res) => {
             { _id: req.params.id, user: req.user.id },
             cleanData,
             { new: true, runValidators: true }
-        ).populate('cvVersion', 'versionName generatedDate');
+        ).populate('cvVersion', 'versionName generatedDate latexCode');
 
         if (!application) {
             return res.status(404).json({
@@ -184,7 +184,7 @@ export const updateApplicationStatus = async (req, res) => {
             { _id: req.params.id, user: req.user.id },
             { status },
             { new: true, runValidators: true }
-        ).populate('cvVersion', 'versionName generatedDate');
+        ).populate('cvVersion', 'versionName generatedDate latexCode');
 
         if (!application) {
             return res.status(404).json({

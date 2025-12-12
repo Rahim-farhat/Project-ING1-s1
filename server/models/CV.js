@@ -106,6 +106,11 @@ const cvSchema = new mongoose.Schema({
     usageCount: {
         type: Number,
         default: 0
+    },
+    // Reference to the job application this CV was generated for
+    jobApplication: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'JobApplication'
     }
 }, {
     timestamps: true

@@ -177,6 +177,7 @@ export const saveGeneratedCV = async (req, res) => {
             versionName,
             description: description || '',
             latexCode,
+            jobApplication: jobApplicationId || null,
             profileSnapshot: {
                 personalInfo: profile.personalInfo,
                 education: profile.education,

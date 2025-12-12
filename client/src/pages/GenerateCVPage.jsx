@@ -295,7 +295,7 @@ const GenerateCVPage = () => {
                                     borderRadius: '8px',
                                     border: '1px solid #e2e8f0'
                                 }}>
-                                    <h4 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-primary)' }}>
+                                    <h4 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-secondary)' }}>
                                         💾 Sauvegarder ce CV
                                     </h4>
 
@@ -457,7 +457,30 @@ const GenerateCVPage = () => {
                                         try {
                                             const base64 = btoa(unescape(encodeURIComponent(generatedCV)));
                                             const dataUri = 'data:text/x-tex;base64,' + base64;
-                                            window.open('https://www.overleaf.com/docs?snip_uri=' + encodeURIComponent(dataUri), '_blank');
+                                            const overleafUrl = 'https://www.overleaf.com/docs?snip_uri=' + encodeURIComponent(dataUri);
+
+                                            // Check if URL is too long (most servers limit to ~8KB for URLs)
+                                            if (overleafUrl.length > 8000) {
+                                                // Fallback: Download the .tex file instead
+                                                const blob = new Blob([generatedCV], { type: 'text/plain' });
+                                                const url = window.URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `${cvName || 'cv'}.tex`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                                window.URL.revokeObjectURL(url);
+
+                                                alert('⚠️ Le CV est trop volumineux pour être ouvert directement.\n\n' +
+                                                    '📥 Le fichier .tex a été téléchargé.\n\n' +
+                                                    '📝 Pour utiliser Overleaf:\n' +
+                                                    '1. Allez sur overleaf.com\n' +
+                                                    '2. Créez un nouveau projet\n' +
+                                                    '3. Uploadez le fichier .tex téléchargé');
+                                            } else {
+                                                window.open(overleafUrl, '_blank');
+                                            }
                                         } catch (e) {
                                             console.error('Error opening Overleaf:', e);
                                             alert('Impossible d\'ouvrir Overleaf avec ce contenu.');
