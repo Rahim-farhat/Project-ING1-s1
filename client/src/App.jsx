@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import DashboardHome from './pages/DashboardHome';
 import ProfilePage from './pages/ProfilePage';
 import GenerateCVPage from './pages/GenerateCVPage';
+import ProfileCritiquePage from './pages/ProfileCritiquePage';
 import InterviewPrepPage from './pages/InterviewPrepPage';
 import JobApplicationsPage from './pages/JobApplicationsPage';
 import './App.css';
@@ -45,6 +46,7 @@ function App() {
           <Route index element={<DashboardHome />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="generate-cv" element={<GenerateCVPage />} />
+          <Route path="profile-critique" element={<ProfileCritiquePage />} />
           <Route path="interview-prep" element={<InterviewPrepPage />} />
           <Route path="job-applications" element={<JobApplicationsPage />} />
         </Route>

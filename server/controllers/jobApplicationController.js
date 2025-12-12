@@ -121,9 +121,28 @@ export const createApplication = async (req, res) => {
 // Update application
 export const updateApplication = async (req, res) => {
     try {
+        // Clean up the data before updating
+        const cleanData = { ...req.body };
+
+        // Remove empty fields
+        if (!cleanData.cvVersion) delete cleanData.cvVersion;
+        if (!cleanData.location) delete cleanData.location;
+        if (!cleanData.applicationUrl) delete cleanData.applicationUrl;
+        if (!cleanData.notes) delete cleanData.notes;
+
+        // Clean salary object
+        if (cleanData.salary) {
+            if (!cleanData.salary.min) delete cleanData.salary.min;
+            if (!cleanData.salary.max) delete cleanData.salary.max;
+            // Remove entire salary object if both min and max are missing
+            if (!cleanData.salary.min && !cleanData.salary.max) {
+                delete cleanData.salary;
+            }
+        }
+
         const application = await JobApplication.findOneAndUpdate(
             { _id: req.params.id, user: req.user.id },
-            req.body,
+            cleanData,
             { new: true, runValidators: true }
         ).populate('cvVersion', 'versionName generatedDate');
 
@@ -140,6 +159,7 @@ export const updateApplication = async (req, res) => {
             data: application
         });
     } catch (error) {
+        console.error('Update application error:', error);
         res.status(400).json({
             success: false,
             message: 'Error updating application',

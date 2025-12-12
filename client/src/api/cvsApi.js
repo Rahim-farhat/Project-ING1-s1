@@ -61,3 +61,9 @@ export const getCVStats = async () => {
     const response = await api.get('/cvs/stats');
     return response.data;
 };
+
+// Save generated CV with LaTeX code
+export const saveGeneratedCV = async (cvData) => {
+    const response = await api.post('/cvs/save', cvData);
+    return response.data;
+};

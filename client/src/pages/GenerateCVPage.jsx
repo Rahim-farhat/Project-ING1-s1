@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { saveGeneratedCV } from '../api/cvsApi';
 
 const GenerateCVPage = () => {
     const [jobApplications, setJobApplications] = useState([]);
@@ -8,6 +9,9 @@ const GenerateCVPage = () => {
     const [loadingApplications, setLoadingApplications] = useState(true);
     const [generatedCV, setGeneratedCV] = useState(null);
     const [error, setError] = useState(null);
+    const [cvName, setCvName] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(null);
 
     // Fetch job applications on mount
     useEffect(() => {
@@ -37,11 +41,18 @@ const GenerateCVPage = () => {
         setLoading(true);
         setError(null);
         setGeneratedCV(null);
+        setSaveSuccess(null);
 
         try {
             const response = await api.post('/cvs/generate', { jobApplicationId: selectedApplicationId });
             if (response.data.success) {
                 setGeneratedCV(response.data.latex);
+
+                // Auto-populate CV name based on selected application
+                const selectedApp = jobApplications.find(app => app._id === selectedApplicationId);
+                if (selectedApp) {
+                    setCvName(`CV ${selectedApp.company} - ${selectedApp.position}`);
+                }
             } else {
                 setError('Erreur lors de la génération du CV.');
             }
@@ -51,6 +62,71 @@ const GenerateCVPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSaveAndAttach = async () => {
+        if (!cvName.trim()) {
+            setError('Veuillez entrer un nom pour le CV.');
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+        setSaveSuccess(null);
+
+        try {
+            const response = await saveGeneratedCV({
+                versionName: cvName,
+                latexCode: generatedCV,
+                jobApplicationId: selectedApplicationId
+            });
+
+            if (response.success) {
+                // Get the selected application details for the success message
+                const selectedApp = jobApplications.find(app => app._id === selectedApplicationId);
+                const companyInfo = selectedApp ? ` pour ${selectedApp.company} - ${selectedApp.position}` : '';
+                setSaveSuccess(`CV sauvegardé et attaché à la candidature${companyInfo} avec succès! 🎉`);
+            }
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || 'Erreur lors de la sauvegarde du CV.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveOnly = async () => {
+        if (!cvName.trim()) {
+            setError('Veuillez entrer un nom pour le CV.');
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+        setSaveSuccess(null);
+
+        try {
+            const response = await saveGeneratedCV({
+                versionName: cvName,
+                latexCode: generatedCV
+            });
+
+            if (response.success) {
+                setSaveSuccess('CV sauvegardé avec succès! 🎉');
+            }
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || 'Erreur lors de la sauvegarde du CV.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDiscard = () => {
+        setGeneratedCV(null);
+        setCvName('');
+        setSaveSuccess(null);
+        setError(null);
     };
 
     const downloadTex = () => {
@@ -193,6 +269,174 @@ const GenerateCVPage = () => {
                                 {generatedCV}
                             </div>
 
+                            {/* Success Message */}
+                            {saveSuccess && (
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#d1fae5',
+                                    color: '#065f46',
+                                    borderRadius: '8px',
+                                    marginTop: '1.5rem',
+                                    marginBottom: '1.5rem',
+                                    border: '1px solid #6ee7b7',
+                                    fontWeight: 500
+                                }}>
+                                    ✅ {saveSuccess}
+                                </div>
+                            )}
+
+                            {/* Save CV Section */}
+                            {!saveSuccess && (
+                                <div style={{
+                                    marginTop: '2rem',
+                                    marginBottom: '2rem',
+                                    padding: '1.5rem',
+                                    backgroundColor: '#f8fafc',
+                                    borderRadius: '8px',
+                                    border: '1px solid #e2e8f0'
+                                }}>
+                                    <h4 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-primary)' }}>
+                                        💾 Sauvegarder ce CV
+                                    </h4>
+
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <label htmlFor="cvName" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
+                                            Nom du CV
+                                        </label>
+                                        <input
+                                            id="cvName"
+                                            type="text"
+                                            value={cvName}
+                                            onChange={(e) => setCvName(e.target.value)}
+                                            placeholder="Ex: CV Google - Software Engineer"
+                                            disabled={saving}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid #cbd5e1',
+                                                fontSize: '0.95rem',
+                                                fontFamily: 'inherit',
+                                                backgroundColor: saving ? '#f1f5f9' : 'white'
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                        <button
+                                            className="btn-primary"
+                                            onClick={handleSaveAndAttach}
+                                            disabled={saving}
+                                            style={{
+                                                flex: '1 1 auto',
+                                                minWidth: '200px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                padding: '0.75rem 1rem'
+                                            }}
+                                        >
+                                            {saving ? (
+                                                <>
+                                                    <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                                                    </svg>
+                                                    Sauvegarde...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                                        <polyline points="7 3 7 8 15 8"></polyline>
+                                                    </svg>
+                                                    Sauvegarder et attacher à la candidature
+                                                </>
+                                            )}
+                                        </button>
+
+                                        <button
+                                            onClick={handleSaveOnly}
+                                            disabled={saving}
+                                            style={{
+                                                flex: '1 1 auto',
+                                                minWidth: '150px',
+                                                padding: '0.75rem 1rem',
+                                                borderRadius: '8px',
+                                                border: '2px solid var(--primary-color)',
+                                                backgroundColor: 'white',
+                                                color: 'var(--primary-color)',
+                                                fontWeight: 600,
+                                                cursor: saving ? 'not-allowed' : 'pointer',
+                                                fontSize: '0.95rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                transition: 'all 0.2s',
+                                                opacity: saving ? 0.6 : 1
+                                            }}
+                                            onMouseOver={(e) => {
+                                                if (!saving) {
+                                                    e.target.style.backgroundColor = 'var(--primary-color)';
+                                                    e.target.style.color = 'white';
+                                                }
+                                            }}
+                                            onMouseOut={(e) => {
+                                                e.target.style.backgroundColor = 'white';
+                                                e.target.style.color = 'var(--primary-color)';
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                                <polyline points="7 3 7 8 15 8"></polyline>
+                                            </svg>
+                                            Sauvegarder seulement
+                                        </button>
+
+                                        <button
+                                            onClick={handleDiscard}
+                                            disabled={saving}
+                                            style={{
+                                                padding: '0.75rem 1rem',
+                                                borderRadius: '8px',
+                                                border: '2px solid #ef4444',
+                                                backgroundColor: 'white',
+                                                color: '#ef4444',
+                                                fontWeight: 600,
+                                                cursor: saving ? 'not-allowed' : 'pointer',
+                                                fontSize: '0.95rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                transition: 'all 0.2s',
+                                                opacity: saving ? 0.6 : 1
+                                            }}
+                                            onMouseOver={(e) => {
+                                                if (!saving) {
+                                                    e.target.style.backgroundColor = '#ef4444';
+                                                    e.target.style.color = 'white';
+                                                }
+                                            }}
+                                            onMouseOut={(e) => {
+                                                e.target.style.backgroundColor = 'white';
+                                                e.target.style.color = '#ef4444';
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                            Rejeter
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Download Actions */}
                             <div className="actions" style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                                 <button
                                     className="btn-primary"
