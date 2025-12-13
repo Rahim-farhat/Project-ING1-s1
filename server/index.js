@@ -11,6 +11,8 @@ import jobApplicationRoutes from './routes/jobApplications.js';
 import cvRoutes from './routes/cvs.js';
 import todoRoutes from './routes/todos.js';
 import profileCritiqueRoutes from './routes/profileCritique.js';
+import hrInterviewRoutes from './routes/hrInterview.js';
+import technicalInterviewRoutes from './routes/technicalInterview.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -63,6 +65,8 @@ app.use('/api', jobApplicationRoutes);
 app.use('/api/cvs', cvRoutes);
 app.use('/api', todoRoutes);
 app.use('/api/profile-critique', profileCritiqueRoutes);
+app.use('/api/hr-interview', hrInterviewRoutes);
+app.use('/api/technical-interview', technicalInterviewRoutes);
 
 // Error handling
 app.use(notFound);
