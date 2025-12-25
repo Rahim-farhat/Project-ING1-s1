@@ -74,7 +74,7 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(clientBuildPath));
 
     // Handle React routing - return all non-API requests to React app
-    app.get('(.*)', (req, res) => {
+    app.get('/:path*', (req, res) => {
         res.sendFile(path.join(clientBuildPath, 'index.html'));
     });
 } else {
