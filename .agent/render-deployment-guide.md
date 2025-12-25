@@ -103,15 +103,16 @@ Visit: `https://hirex-ad9w.onrender.com`
 
 ## 🐛 Troubleshooting
 
-### Issue: Still seeing JSON instead of React app
-**Solutions:**
-1. ✅ Make sure `NODE_ENV=production` is set on Render
-2. ✅ Check build logs - `client/dist` folder should be created
-3. ✅ Verify build command completed successfully
-4. ✅ Redeploy the service
+### Issue: Server crashes with "PathError" (Express 5)
+**Solution**: If you use Express 5 (like this project), the catch-all route `*` causes an error. It must be changed to `(.*)`:
+```javascript
+// server/index.js
+app.get('(.*)', (req, res) => { ... })
+```
+(I've already applied this fix to the code!)
 
 ### Issue: 404 on routes
-**Solution**: The catch-all route (`app.get('*')`) should handle React routing. Make sure it's after all API routes.
+**Solution**: The catch-all route (`app.get('(.*)')`) should handle React routing. Make sure it's after all API routes.
 
 ### Issue: API calls failing
 **Solution**: 
