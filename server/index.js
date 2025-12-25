@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
@@ -17,12 +19,20 @@ import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 dotenv.config();
 
+// ES module path fix
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS configuration - allow credentials (cookies)
+// In production, frontend is served from same domain, so allow that
+// In development, allow localhost:5173
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'https://hirex-ad9w.onrender.com',
+    origin: process.env.NODE_ENV === 'production'
+        ? process.env.CLIENT_URL || 'https://hirex-ad9w.onrender.com'
+        : 'http://localhost:5173',
     credentials: true
 }));
 
@@ -48,17 +58,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// Routes
-app.get('/', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Authentication API is running',
-        storage: process.env.MONGO_URI && process.env.MONGO_URI !== 'your_mongodb_cluster_uri'
-            ? 'MongoDB'
-            : 'JSON File'
-    });
-});
-
+// API Routes
 app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', jobApplicationRoutes);
@@ -67,6 +67,28 @@ app.use('/api', todoRoutes);
 app.use('/api/profile-critique', profileCritiqueRoutes);
 app.use('/api/hr-interview', hrInterviewRoutes);
 app.use('/api/technical-interview', technicalInterviewRoutes);
+
+// Serve static files from the React app (in production)
+if (process.env.NODE_ENV === 'production') {
+    const clientBuildPath = path.join(__dirname, '../client/dist');
+    app.use(express.static(clientBuildPath));
+
+    // Handle React routing - return all non-API requests to React app
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(clientBuildPath, 'index.html'));
+    });
+} else {
+    // Development mode - just show API status
+    app.get('/', (req, res) => {
+        res.json({
+            success: true,
+            message: 'Authentication API is running',
+            storage: process.env.MONGO_URI && process.env.MONGO_URI !== 'your_mongodb_cluster_uri'
+                ? 'MongoDB'
+                : 'JSON File'
+        });
+    });
+}
 
 // Error handling
 app.use(notFound);
