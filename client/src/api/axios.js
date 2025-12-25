@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'https://hirex-ad9w.onrender.com/api',
     withCredentials: true, // Important for httpOnly cookies
     headers: {
         'Content-Type': 'application/json'
@@ -35,7 +35,7 @@ api.interceptors.response.use(
             try {
                 // Try to refresh the token
                 const { data } = await axios.post(
-                    `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+                    `${import.meta.env.VITE_API_URL || 'https://hirex-ad9w.onrender.com/api'}/auth/refresh`,
                     {},
                     { withCredentials: true }
                 );

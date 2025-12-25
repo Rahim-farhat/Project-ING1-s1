@@ -22,7 +22,7 @@ const PORT = process.env.PORT || 5000;
 
 // CORS configuration - allow credentials (cookies)
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: process.env.CLIENT_URL || 'https://hirex-ad9w.onrender.com',
     credentials: true
 }));
 
@@ -93,6 +93,6 @@ connectDB();
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 API URL: http://localhost:${PORT}`);
-    console.log(`🔐 Auth endpoints available at: http://localhost:${PORT}/api/auth`);
+    console.log(`📍 API URL: https://hirex-ad9w.onrender.com`);
+    console.log(`🔐 Auth endpoints available at: https://hirex-ad9w.onrender.com/api/auth`);
 });
