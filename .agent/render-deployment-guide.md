@@ -104,15 +104,15 @@ Visit: `https://hirex-ad9w.onrender.com`
 ## 🐛 Troubleshooting
 
 ### Issue: Server crashes with "PathError" (Express 5)
-**Solution**: If you use Express 5 (like this project), the catch-all route `*` causes an error. It must be changed to `(.*)`:
+**Solution**: Express 5 requires a named parameter for catch-all routes. Change `*` or `(.*)` to `/:path*`:
 ```javascript
 // server/index.js
-app.get('(.*)', (req, res) => { ... })
+app.get('/:path*', (req, res) => { ... })
 ```
 (I've already applied this fix to the code!)
 
 ### Issue: 404 on routes
-**Solution**: The catch-all route (`app.get('(.*)')`) should handle React routing. Make sure it's after all API routes.
+**Solution**: The catch-all route (`app.get('/:path*')`) should handle React routing. Make sure it's after all API routes.
 
 ### Issue: API calls failing
 **Solution**: 
