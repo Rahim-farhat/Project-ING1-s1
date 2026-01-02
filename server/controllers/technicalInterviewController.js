@@ -6,7 +6,7 @@ export const getTechnicalQuestions = async (req, res) => {
         // const { topic, difficulty } = req.body;
 
         // Get n8n webhook URL from environment or use a placeholder that needs updating
-        // The previous URL 'https://rahim-n8n.app.n8n.cloud/webhook/bd1fe569-0009-4ed3-bb14-6e05a6eazertyu' had a typo
+        // The previous URL 'https://rahim-farhat.app.n8n.cloud/webhook/bd1fe569-0009-4ed3-bb14-6e05a6eazertyu' had a typo
         const webhookUrl = process.env.N8N_TECHNICAL_QUIZ_WEBHOOK_URL;
 
         if (!webhookUrl) {

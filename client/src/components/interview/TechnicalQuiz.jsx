@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../api/axios';
+import axios from 'axios';
 
 const TechnicalQuiz = ({ onExit }) => {
     const [quizMode, setQuizMode] = useState('loading');
@@ -20,7 +20,7 @@ const TechnicalQuiz = ({ onExit }) => {
         setError(null);
 
         try {
-            const response = await api.post('/technical-interview');
+            const response = await axios.post(import.meta.env.VITE_N8N_TECHNICAL_QUIZ_WEBHOOK_URL);
 
             console.log('Full response:', response);
             console.log('Response data:', response.data);
