@@ -71,7 +71,13 @@ export const generateCV = async (req, res) => {
         try {
             // Send to n8n
             console.log('Sending data to n8n webhook...');
-            const n8nResponse = await fetch('https://rahim-n8n.app.n8n.cloud/webhook/bd1fe569-0009-4ed3-bb14-6e05a6e89d97', {
+            const webhookUrl = process.env.N8N_CV_GENERATION_WEBHOOK_URL;
+
+            if (!webhookUrl) {
+                throw new Error('N8N_CV_GENERATION_WEBHOOK_URL is not configured');
+            }
+
+            const n8nResponse = await fetch(webhookUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api/axios';
 
 const TechnicalQuiz = ({ onExit }) => {
     const [quizMode, setQuizMode] = useState('loading');
@@ -20,7 +20,7 @@ const TechnicalQuiz = ({ onExit }) => {
         setError(null);
 
         try {
-            const response = await axios.post('https://rahim-n8n.app.n8n.cloud/webhook/bd1fe569-0009-4ed3-bb14-6e05a6eazertyu');
+            const response = await api.post('/technical-interview');
 
             console.log('Full response:', response);
             console.log('Response data:', response.data);
